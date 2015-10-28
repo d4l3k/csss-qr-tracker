@@ -1,0 +1,156 @@
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://storage.googleapis.com/code.getmdl.io/1.0.5/material.pink-orange.min.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <style>
+    .page {
+      display: none;
+    }
+    #error {
+      color: red;
+      font-size: 24pt;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+    #reader {
+      display: none;
+      height: 100%;
+      width: 100%;
+    }
+    .ticket {
+      height: 1.5in;
+      border-bottom: 1px solid;
+      padding: 1in;
+      font-size: 32pt;
+      line-height: 32pt;
+    }
+    .ticket img{
+      float: left;
+      margin-right: 0.5in;
+    }
+  </style>
+</head>
+<body>
+  <div id="error"></div>
+  <div id="reader"></div>
+  <div class="page" id="index">
+    <div class="mdl-typography--display-2">CSSS Beer Garden Ticketing System</div>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent" onclick="page('/checkin')">
+      Check-In
+    </button>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent" onclick="page('/beer')">
+      Serve Beer
+    </button>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent" onclick="page('/generate')">
+      Generate Tickets
+    </button>
+  </div>
+  <div class="page" id="generate">
+    <input id="ticketCount" type="number"></input>
+    <button id="genTickets" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
+      Generate Tickets
+    </button>
+    <div id="tickets"></div>
+  </div>
+  <div class="page" id="checkin">
+    Checkin
+  </div>
+  <div class="page" id="beer">
+    Beer
+  </div>
+  <script src="https://storage.googleapis.com/code.getmdl.io/1.0.5/material.min.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+  <script src="https://cdn.rawgit.com/visionmedia/page.js/master/page.js"></script>
+  <script src="https://cdn.rawgit.com/dwa012/html5-qrcode/master/lib/html5-qrcode.min.js"></script>
+  <script src="https://cdn.rawgit.com/dwa012/html5-qrcode/master/lib/jsqrcode-combined.min.js"></script>
+  <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/master/qrcode.min.js"></script>
+  <script>
+    $('#genTickets').click(function() {
+      var tickets = [];
+      var html = "";
+      for (var i=0; i<10; i++) {
+        html += '<div class="ticket">';
+        html += '<div id="ticket'+i+'"></div> ';
+        html += 'CSSS Beer Garden Ticket<br><br>January, 2016';
+        html += '</div>';
+      }
+      $('#tickets').html(html);
+      for (var i=0; i<10; i++) {
+        var ticketId = 'ticket:'+btoa(Math.random());
+        tickets.push(ticketId);
+        var qrcode = new QRCode($('#ticket'+i)[0], {
+          text: ticketId,
+          width: 128,
+          height: 128,
+        });
+      }
+      $.ajax({
+        type: "POST",
+        url: '/api/genTickets',
+        data: JSON.stringify(tickets),
+        error: function(e) {
+          alert(JSON.stringify(e));
+        },
+      });
+    });
+    page('/', function() {
+      console.log('foo');
+      $('.page').hide();
+      $('#index').show();
+    });
+    page('/generate', function() {
+      $('.page').hide();
+      $('#generate').show();
+    });
+
+    page('/checkin', function() {
+      $('.page').hide();
+      $('#checkin').show();
+      $('#reader').show().html5_qrcode(function(id){
+        $.post('/api/checkin', id, function(resp) {
+          var resp = JSON.parse(resp);
+          if (resp == "0") {
+            alert('Checked-in!');
+          } else if (resp === "") {
+            alert('Invalid ticket!');
+          } else {
+            alert('Already checked-in!');
+          }
+        }, 'text');
+      }, function(error){
+        $('#error').html(error);
+      }, function(videoError){
+        $('#error').html(videoError);
+      });
+    });
+    page('/beer', function() {
+      $('.page').hide();
+      $('#beer').show();
+      $('#reader').show().html5_qrcode(function(id){
+        $.post('/api/beer', id, function(resp) {
+          var resp = JSON.parse(resp);
+          if (resp === "") {
+            alert('Invalid ticket!');
+          } else {
+            var d = new Date((parseInt(resp) + 60*60)*1000);
+            var diff = d - new Date();
+            var minutes = (diff/60.0/1000.0).toFixed(0);
+            console.log(d, diff, minutes);
+            if (diff <= 0) {
+              alert('Good to go!')
+            } else {
+              alert('Need to wait ' + minutes + ' minutes.');
+            }
+          }
+        }, 'text');
+      }, function(error){
+        $('#error').html(error);
+      }, function(videoError){
+        $('#error').html(videoError);
+      });
+    });
+    page({hashbang: true});
+  </script>
+</body>
