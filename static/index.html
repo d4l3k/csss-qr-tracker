@@ -20,15 +20,21 @@
       width: 100%;
     }
     .ticket {
-      height: 1.5in;
-      border-bottom: 1px solid;
-      padding: 1in;
-      font-size: 32pt;
-      line-height: 32pt;
+      color: black;
+      height: 1.4in;
+      border-bottom: 1px solid #eee;
+      padding: 0.25in;
+      font-size: 24pt;
+      line-height: 46pt;
     }
     .ticket img{
       float: left;
-      margin-right: 0.5in;
+      margin-right: 0.25in;
+    }
+    @media print {
+      #generate input, #generate button {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -48,7 +54,7 @@
     </button>
   </div>
   <div class="page" id="generate">
-    <input id="ticketCount" type="number"></input>
+    <input id="ticketCount" type="number" value="10"></input>
     <button id="genTickets" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
       Generate Tickets
     </button>
@@ -70,14 +76,15 @@
     $('#genTickets').click(function() {
       var tickets = [];
       var html = "";
-      for (var i=0; i<10; i++) {
+      var count = parseInt($('#ticketCount').val());
+      for (var i=0; i<count; i++) {
         html += '<div class="ticket">';
         html += '<div id="ticket'+i+'"></div> ';
-        html += 'CSSS Beer Garden Ticket<br><br>January, 2016';
+        html += 'CSSS Beer Garden Ticket<br>January, 2016';
         html += '</div>';
       }
       $('#tickets').html(html);
-      for (var i=0; i<10; i++) {
+      for (var i=0; i<count; i++) {
         var ticketId = 'ticket:'+btoa(Math.random());
         tickets.push(ticketId);
         var qrcode = new QRCode($('#ticket'+i)[0], {
